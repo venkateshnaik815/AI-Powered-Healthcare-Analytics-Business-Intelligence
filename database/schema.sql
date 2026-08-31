@@ -66,3 +66,60 @@ CREATE TABLE ehr_records (
     prescription TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+-- Phase 3: Operational Modules
+
+CREATE TABLE lab_tests (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    patient_id UUID REFERENCES patients(id),
+    doctor_id UUID REFERENCES staff(id),
+    test_name VARCHAR(255) NOT NULL,
+    sample_type VARCHAR(100),
+    status VARCHAR(50) DEFAULT 'Pending', -- Pending, Processing, Completed, Cancelled
+    result_data TEXT,
+    ai_analysis JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE pharmacy_inventory (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    medicine_name VARCHAR(255) NOT NULL,
+    batch_number VARCHAR(100) NOT NULL,
+    quantity INT NOT NULL,
+    unit_price DECIMAL(10, 2) NOT NULL,
+    expiry_date DATE NOT NULL,
+    supplier VARCHAR(255),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE prescriptions_dispensed (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    patient_id UUID REFERENCES patients(id),
+    medicine_id UUID REFERENCES pharmacy_inventory(id),
+    quantity_dispensed INT NOT NULL,
+    dispensed_by UUID REFERENCES staff(id),
+    dispensed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE billing_invoices (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    patient_id UUID REFERENCES patients(id),
+    appointment_id UUID REFERENCES appointments(id),
+    total_amount DECIMAL(10, 2) NOT NULL,
+    amount_paid DECIMAL(10, 2) DEFAULT 0.00,
+    status VARCHAR(50) DEFAULT 'Unpaid', -- Unpaid, Partial, Paid
+    due_date DATE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE insurance_claims (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    invoice_id UUID REFERENCES billing_invoices(id),
+    patient_id UUID REFERENCES patients(id),
+    provider_name VARCHAR(255) NOT NULL,
+    policy_number VARCHAR(100) NOT NULL,
+    claim_amount DECIMAL(10, 2) NOT NULL,
+    status VARCHAR(50) DEFAULT 'Submitted', -- Submitted, Under Review, Approved, Rejected
+    ai_fraud_score DECIMAL(3, 2),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
